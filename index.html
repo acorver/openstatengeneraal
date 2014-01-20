@@ -1,72 +1,167 @@
-<!doctype html>
-<html>
-  <head>
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Open Staten-Generaal by acorver</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Abel Corver">
 
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <script src="javascripts/scale.fix.js"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-  </head>
-  <body>
-    <div class="wrapper">
-      <header>
-        <h1 class="header">Open Staten-Generaal</h1>
-        <p class="header">Facilitating open access to and analysis of voting by Dutch parties and politicians</p>
+    <title>Open Staten-Generaal</title>
 
-        <ul>
-          <li class="download"><a class="buttons" href="https://github.com/acorver/openstatengeneraal/zipball/master">Download ZIP</a></li>
-          <li class="download"><a class="buttons" href="https://github.com/acorver/openstatengeneraal/tarball/master">Download TAR</a></li>
-          <li><a class="buttons github" href="https://github.com/acorver/openstatengeneraal">View On GitHub</a></li>
-        </ul>
+    <link href="http://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+</head>
 
-        <p class="header">This project is maintained by <a class="header name" href="https://github.com/acorver">acorver</a></p>
+<body data-spy="scroll" data-target="#navbar-top">
 
+    <div class="container">
+        <div class="header">
+            <nav class="navbar navbar-inverse navbar-default affix" id="navbar-top" role="navigation">
+                <div>
+                    <a class="navbar-brand" href="#">Open Staten-Generaal</a>
+                </div>
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                    <ul class="nav navbar-nav">
+                        <li class="active"><a href="#getthedata">Get the Data</a></li>
+                        <li><a href="#two">Current Development</a></li>
+                        <li><a href="#three">Sources</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </div>
 
-      </header>
-      <section>
-        <h3>
-<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
+        <div class="jumbotron">
+            <h1>Open Staten-Generaal</h1>
+            <p class="lead">Facilitating open access to and analysis of voting by Dutch parties and politicians..</p>
+            <p><a class="btn btn-lg btn-success" href="#getthedata" role="button">Get the Data</a></p>
+        </div>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+        <div class="row marketing">
+            <div class="col-lg-6">
+                <h4>Aggregated Data</h4>
+                <p>Data has been aggregated from multiple sources, including (i) official documents from the Dutch House of Representatives ('Tweede Kamer'), (ii) webcrawlers, (iii) politicalmashup.nl</p>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
-</code></pre>
+                <h4>JSON</h4>
+                <p>Data is stored in JSON format and can be queried using the powerful ElasticSearch API</p>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+                <h4>Up-to-date</h4>
+                <p>Update scripts extract the most recent votes from the website of the Dutch House of Representatives (tweedekamer.nl)</p>
 
-<h3>
-<a name="designer-templates" class="anchor" href="#designer-templates"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
+                <h4>Python &amp; GitHub</h4>
+                All code is written in python; it works on all platforms and is relatively easy to understand and modify. It is hosted on GitHub, so that anyone can contribute code, check revisions, submit bug reports, etc.
+            </div>
 
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
+            <div class="col-lg-6">
+                <h4>Political Science Tools & Techniques</h4>
+                <p>Several political science algorithms are included for the analysis and visualization of the voting data</p>
 
-<h3>
-<a name="rather-drive-stick" class="anchor" href="#rather-drive-stick"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
+                <h4>Open Source</h4>
+                <p>All code is entirely open source. All contributions and feedback are greatly appreciated!</p>
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+                <h4>Related projects</h4>
+                <p>Check out related projects <a href="#"> here</a>!</p>
+            </div>
+        </div>
 
-<h3>
-<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
+        <section id="getthedata">
+            <h1>Get the Data</h1>
+            <table class="table table-striped table-hover">
+                <tr>
+                    <td>The entire dataset can be downloaded in JSON format here:</td>
+                    <td><button type="button" class="btn btn-default btn-success">Download JSON</button></td>
+                </tr>
+                <tr>
+                    <td>
+                        If you want to write your own data parsers, the ElasticSearch database dump allows you to
+                        quickly get started without having to re-run the data parsers part of this project.
+                    </td>
+                    <td><button type="button" class="btn btn-default btn-success">Download ElasticSearch Database</button></td>
+                </tr>
+                <tr>
+                    <td>
+                        Due to the hierarchical structuring of the data, it cannot usefully be made available in CSV format. We do, however, provide various useful subsets
+                        of the full dataset in CSV format.
+                    </td>
+                    <td><button type="button" class="btn btn-default btn-success">Download votes in CSV format</button></td>
+                </tr>
+                <tr>
+                    <td>
+                        In the future, data will be requestable through an API. Check back later.
+                    </td>
+                    <td></td>
+                </tr>
+            </table>
+        </section>
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+        <section id="dev">
+            <h1>Current Development and Future Plans</h1>
+            <p>Want to help? <a href="#contact">Get in touch!</a></p>
+            <table class="table table-striped table-hover">
+                <tr>
+                    <td>ongoing</td>
+                    <td>We're developing a library of algorithms that facilitate in the analysis and visualization of voting behavior.</td>
+                </tr>
+                <tr>
+                    <td>near future</td>
+                    <td>We're interested in developing parsers to extract votes as far back as 1814 from archives parliamentary records.</td>
+                </tr>
+                <tr>
+                    <td>future</td>
+                    <td>City council and States-Provincial votes are often available digitally on the websites of the relevant 
+                        cities and provinces. Documents follow similar patterns, so it should be possible to parse the documents, 
+                        make the votes digitally available, and analyze them using the algorithms already developed for the House.</td>
+                </tr>
+                <tr>
+                    <td>future?</td>
+                    <td>Researching voting records of other (EU) countries? We're very interested in cooperating! 
+                        </td>
+                </tr>
+            </table>
+        </section>
 
-<h3>
-<a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
+        <section id="contact">
+            <h1>Get in Touch!</h1>
+            <p>
+                Working on a similar project, or want to help implement <a href="#dev">current development goals</a>? We'd love to hear from you!
+                The project and data are entirely open-source. 
+            </p>
+            <p>
+                Currently it's best to get in touch with: <a href="#">contact [at] abelcorver [dot] com</a>
+            </p>
+        </section>
+        <section id="sources">
+            <h1>Sources</h1>
+            <table class="table table-striped table-hover">
+                <tr>
+                    <td>
+                        The voting record of members of and parties in the House of Representatives from 2009 onwards is crawled from the webinterface at tweedekamer.nl [1].
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        The voting record of members of and parties in the House of Representatives from approximately 1980 to 2013 will be supplied by the information services department of the Dutch House of Representatives [1]
+                        Data on the presence of politicians at plenary meetings of the House of Representatives can be found in the minutes of each meeting, which are available here [1] for this and last year's meetings, and here [2] for meetings older than about 4 months
+                    </td>
+                </tr>
+                <tr>
+                    <td>Data from the politicalmashup.nl project was queried from their public API and integrated into the database. [TODO: Add Links to API]</td>
+                </tr>
+            </table>
 
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
-      </section>
-      <footer>
-        <p><small>Hosted on <a href="http://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
-      </footer>
-    </div>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
-		
-  </body>
+            <h1>Related Projects</h1>
+            <table class="table table-striped table-hover">
+                <tr><td>openstate.eu</td></tr>
+                <tr><td>politicalmashup.nl</td></tr>
+                <tr><td>[...]</td></tr>
+            </table>
+        </section>
+
+    </div> <!-- /container -->
+
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="http://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
+
+</body>
 </html>
