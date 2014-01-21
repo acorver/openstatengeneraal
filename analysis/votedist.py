@@ -7,6 +7,7 @@ from datetime import datetime
 import collections
 from operator import itemgetter
 from data import db
+from visualization.votedist import *
 
 # =============================================================================
 # Get votes by party
@@ -36,68 +37,37 @@ def filter(df, from_date = None, to_date = None, category = None, parties=None):
 # Calculate distance matrix
 # =============================================================================
 
-def distMtx(df, tofile = ''):
+def distMtx(df):
     parties = [x for x in df.columns.tolist() if x.startswith('p.')]
-    dist = [[(0,0) for x in xrange(len(parties))] for y in xrange(len(parties))]
-    mtx = None
+    
+    mtxDst = [[0 for x in xrange(len(parties))] for y in xrange(len(parties))]
+    mtxNum = [[0 for x in xrange(len(parties))] for y in xrange(len(parties))]
+
     for x in xrange(len(parties)):
         for y in xrange(len(parties)):
             tdf = df[pd.notnull(df[parties[x]]) * pd.notnull(df[parties[y]])]
             num = len(tdf)
             if x==y:
-                dist[y][x] = (0,num)
+                mtxDst[y][x] = 0
+                mtxNum[y][x] = num
                 continue
             if x > y:
-                dist[y][x] = dist[x][y]
+                mtxDst[y][x] = mtxDst[x][y]
+                mtxNum[y][x] = mtxNum[x][y]
                 continue
             if num==0:
-                dist[y][x] = (-1,0)
+                mtxDst[y][x] = -1
                 continue
 
             print str(x) + ", " + str(y) + " [len=" + str(num) + "]"
 
             # Calculate total distance (and save number of shared votes)
             dst = float(sum(abs(tdf[parties[x]] - tdf[parties[y]])))/num
-            dist[y][x] = (dst, num)
+            mtxDst[y][x] = dst
+            mtxNum[y][x] = num
 
-        # Update distance matrix
-        if tofile != '':
-            mtx = pd.DataFrame(dist)
-            mtx.columns = map(lambda x: x[len('p.'):], parties)
-            distMtxToHTML(mtx, tofile + ".html")
-            distMtxToCSV(mtx, tofile + ".csv")
-
-    return mtx
-
-def distMtxToCSV(mtx, file):
-    s = ';' + ';'.join(mtx.columns) + '\n' + '\n'.join( [ (mtx.columns[i] + ';' + 
-            ';'.join(map(lambda x: str(x), mtx.iloc[i]))) for i in xrange(len(mtx.columns)) ] )
-    f = open(file, "w")
-    f.write(s)
-    f.close()
-
-def distMtxToHTML(mtx, file):
-    s = ('<html><head><style>'
-         'td { text-align: center } \n '
-         'a { text-decoration: none; color: inherit; } '
-         '</style></head>' 
-         '<body><table cellpadding="4"><tr><th></th><th>' + '</th><th>'.join(mtx.columns) + '</th></tr>')
-    m = float('-inf')
-    for r in mtx:
-        m = float(max(m, max(mtx[r], key=itemgetter(0))[0]))
-        
-    for i in xrange(len(mtx.columns)):
-        s += '<tr><td>' + mtx.columns[i] + '</td>' + ''.join(
-            ['<td align="center" '+
-                 'style="background:rgb('+ ','.join([str(0 if m==0 else unicode(int(255.0*x[0]/m)))]*3) +');' + 
-                        'color:' + ('white' if (x[0] < 0.5*m) else 'black') + ';">'+
-            '<a href="#" title="Calculated from '+ str(x[1]) +' shared votes.">' + '{:1.3f}'.format(x[0]) + '</a>' +
-            '</td>' for x in mtx.iloc[i]]) + '</tr>'
-    s += '</table></body></html>'
-    
-    f = open(file, "w")
-    f.write(s)
-    f.close()
+    # Return all information
+    return {'actors': parties, 'distances':mtxDst, 'num_obs': mtxNum}
 
 # =============================================================================
 # Calculate distance matrices:
@@ -119,25 +89,22 @@ def transformData(x):
             elif v=='A': v = 3
             else: v = 4
             d['p.'+k] = v
-        # Category is optional
-        if 
-
         return d
     except:
         return None
 
 if __name__ == "__main__":
     # Load datasets
-    arr = [x for x in map(transformData,db.getall()) if x != None]
-    df = pd.DataFrame(arr)
+    df = db.getallAsDataFrame(transformData)
 
     # Focus on major parties in Tweede Kamer
     cdf = filter(df[df.house=='commons'], parties=['cda','d66','gl','pvda','pvdd','pvv','sgp','sp','vvd','grkh','cu','50plus'])
 
     # (1) Over all time
-    dmtxAllTime = distMtx(cdf, tofile="output/mtx")
-    
+    dmtxAllTime = distMtx(cdf)
+    distMtxToTableImage(dmtxAllTime, file='alltime.png')
+
     # (2) Over periods of one year
     for year in xrange(1994,2013):
         ydf = filter(cdf, from_date=datetime(year, 1, 1), to_date=datetime(year+1, 1, 1))
-        distMtx(ydf, tofile="output/mtx-"+str(year))
+        distMtxToTableImage(distMtx(ydf), file=str(year)+'.png')

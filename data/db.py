@@ -12,6 +12,15 @@ import pandas as pd
 ES = None
 
 # ===================================================================
+# Helper methods
+# ===================================================================
+
+def getallAsDataFrame(transformFunc):
+    arr = [x for x in map(transformFunc,getall()) if x != None]
+    df = pd.DataFrame(arr)
+    return df
+
+# ===================================================================
 # ElasticSearch
 # ===================================================================
 

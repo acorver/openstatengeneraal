@@ -12,6 +12,7 @@
 _archive/
 output/
 *.sqlite
+*.pyc
 
 # Build results
 
