@@ -5,7 +5,7 @@ from datetime import datetime
 import urllib2
     
 def download(url, maxage = 0.0):
-    conn = sqlite3.connect('cache.sqlite')
+    conn = sqlite3.connect('../data/cache.sqlite')
     conn.text_factory = str
     c = conn.cursor()
     data = ""

@@ -29,7 +29,7 @@ def loadExcelTable(f):
 
 if __name__ == "__main__":
     # Process all .xlsx files provided by the CIP
-    base = "./rawdata/cip/"
+    base = "../data/cip/"
     for file in os.listdir(base):
         if file.endswith(".xlsx"):
             rows = loadExcelTable(base+file)

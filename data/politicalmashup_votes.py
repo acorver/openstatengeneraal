@@ -16,7 +16,7 @@ def parsedate(d):
         return None
 
 if __name__ == "__main__":
-    base = "./rawdata/politicalmashup/"
+    base = "../data/politicalmashup/"
     
     # Need to download files?
     if len([x for x in os.listdir(base) if x.endswith('.csv')])==0:
@@ -30,7 +30,7 @@ if __name__ == "__main__":
                 except:
                     pass
 
-    # Load all data
+    # Load all 'votes' data
     base = "./rawdata/politicalmashup/"
     for file in os.listdir(base):
         if file.endswith(".csv"):
