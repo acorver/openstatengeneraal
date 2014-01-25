@@ -30,12 +30,12 @@ def esconnect():
         ES = es.Elasticsearch()
     return ES
 
-def getids():
-    all = esconnect().search(size=10000000, fields=[])
-    return [x['_id'] for x in all['hits']['hits']]
+def getids(type=None, from_ = 0, size=10000000):
+    all = esconnect().search(fields=[], from_ = from_, size=size)
+    return [x['_id'] for x in all['hits']['hits'] if (type==None or x['_type']==type)]
 
 def get(docid):
-    return esconnect().get(index='openstatengeneraal', id=docid)
+    return esconnect().get(index='openstatengeneraal', id=docid)['_source']
 
 # SOURCE: http://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks-in-python
 def chunk(l, n):
