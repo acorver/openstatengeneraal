@@ -63,3 +63,11 @@ def downloadHTML(url, maxage=0):
     html = BeautifulSoup(htmlStr)
 
     return html
+
+def openHTML(file):
+    htmlStr = ''
+    with open(file, 'r') as f:
+        htmlStr = f.read()
+    htmlStr = htmlStr.decode('utf-8', errors='replace')
+    html = BeautifulSoup(htmlStr)    
+    return html

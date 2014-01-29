@@ -7,6 +7,7 @@
 # ===================================================================
 
 from __future__ import print_function
+import os
 
 # FOR DEBUG PURPOSES ONLY:
 # There's a less hack-y way of fixing this
@@ -55,7 +56,14 @@ def textToHTML(texts, id=''):
 # STATICLY DEFINED MARKER PATTERNS DERIVED FROM MANUAL INSPECTION OF PROCEEDINGS
 # =======================================================================================
 
-STATIC_MARKERS = \
+# Test markers are simpler regular expressions that are executed before the much more expensive,
+# but more precise queries. If the simplier 'test' marker is not found, the more complicated markers
+# are simply skipped. This dramatically increases performance (performance is mostly hampered by the 
+# increasing error tolerance that has to accompany longer regex searches)
+#    Note: MARKERS_TEST will be dynamically constructed
+MARKERS_TEST = {}
+
+MARKERS = \
           [
            #('REJECTED','(in stemming gebragt,)?(wordt |worden )?met ([a-z0-9]){1,6} (tegen )?([a-z0-9]){1,6} stem(men)? verworpen', 5),
            #('ACCEPTED','(in stemming gebragt,)?(wordt |worden )?met ([a-z0-9]){1,6} (tegen )?([a-z0-9]){1,6} stem(men)? (aangenomen|goedgekeurd)', 5),
@@ -63,18 +71,24 @@ STATIC_MARKERS = \
            #('REJECTED','(in stemming gebragt,)?(wordt |worden )?(zonder be raadslaging en )?(zonder|met)?(algemeene stemmen|hoofdelyke stemming|hoofdelijke stemming) verworpen', 5),
            #('ACCEPTED','(in stemming gebragt,)?(wordt |worden )?(zonder be raadslaging en )?(zonder|met)?(algemeene stemmen|hoofdelyke stemming|hoofdelijke stemming) (aangenomen|goedgekeurd)', 5),
            
+           ('TEST', 'verworpen', 1),
            ('REJECTED','(stemmen|stem) verworpen', 3),
-           ('ACCEPTED','(stemmen|stem) (aangenomen|goedgekeurd)', 3),
-           
            ('REJECTED','(algemeene stemmen|hoofdelyke stemming|hoofdelijke stemming) verworpen', 3),
-           ('ACCEPTED','(algemeene stemmen|hoofdelyke stemming|hoofdelijke stemming) (aangenomen|goedgekeurd)', 3),
            
+           ('TEST', '(aangenomen|goedgekeurd)', 1),
+           ('ACCEPTED','(stemmen|stem) (aangenomen|goedgekeurd)', 3),
+           ('ACCEPTED','(algemeene stemmen|hoofdelyke stemming|hoofdelijke stemming) (aangenomen|goedgekeurd)', 3),
 
+           ('TEST' ,'amendement',1),
            ('TOPIC','(deze |het )?amendement(en)?( van)?', 2),
+           
+           ('TEST' ,'(wetsontwerp|ivets-ontwerp|wets-ontwekp|wets-ontu-erp)',1),
            ('TOPIC','(deze |het )?wetsontwerp(en)?( van)?', 2),
            ('TOPIC','(deze |het )?ivets-ontwerp(en)?', 2),
-           ('TOPIC','(deze |het )?wets-ontwekpen(en)?', 2),
+           ('TOPIC','(deze |het )?wets-ontwekp(en)?', 2),
            ('TOPIC','(deze |het )?wets-ontu-erp(en)?', 2),
+
+           ('TEST' ,'', 0), # No test
            ('TOPIC','(dit |het |de )?onderart',1),
            ('TOPIC','(dit |het |de )?ond-art',1),
            ('TOPIC','(dit |het |de )?ond.-art',1),
@@ -90,28 +104,40 @@ STATIC_MARKERS = \
            
            # BREAKs serve to increase structure in the document, and prevent erroneous classifications, 
            # but currently no information is extracted from these 'breaks'
+           ('TEST' ,'notulen', 1),
            ('BREAK','de notulen van het verhandelde ia de vorige zitting worden gelezen en goedgekeurd', 5),
+           
+           ('TEST' ,'beraadslaging', 1),
            ('BREAK','de (algemeene )?beraadslaging wordt gesloten', 1),
-           ('BREAK','dienovcieenkomstig wordt besloten', 4),
            ('BREAK','maakt een onderwerp van beraadslaging uit',3),
-           ('BREAK','than s is aan de orde', 2),
+           
+           ('TEST' ,'orde', 1),
            ('BREAK','thans is aan de orde', 2),
            ('BREAK','alsnu is aan de orde', 2),
+           ('BREAK','than s is aan de orde', 2),
            ('BREAK','aan de orde is', 2),
+           
+           ('TEST' ,'besloten', 1),
+           ('BREAK','dienovcieenkomstig wordt besloten', 4),
+           
+           ('TEST' ,'voortzetting', 1),
            ('BREAK','voortzetting der behandeling',2),
            ('BREAK','voortzetting', 1),
 
            # Decreasing specificity and error tolerance to prevent greedy match 'damaging' name records
+           ('TEST'   ,'afwezig',2),
            ('ABSENT' ,'bij deze stemming (waren|was) afwezig', 3),
            ('ABSENT' ,'afwezig', 0),
            ('ABSENT' ,'afwezig', 2),
            
            # Decreasing specificity and error tolerance to prevent greedy match 'damaging' name records
+           ('TEST'   ,'(te|iv)genwoordig',1),
            ('PRESENT','bij deze stemming (waren|was) (tegenwoordig|ivgenwoordig)', 3),
-           ('PRESENT','(tegenwoordig|ivgenwoordig)', 0),
-           ('PRESENT','(tegenwoordig|ivgenwoordig)', 2),
+           ('PRESENT','(te|iv)genwoordig', 0),
+           ('PRESENT','(te|iv)genwoordig', 2),
            
            # Decreasing specificity and error tolerance to prevent greedy match 'damaging' name records
+           ('TEST'   ,'(gestemd|stemming)', 2),
            ('INFAVOR','voor (hebben|heeft) gestemd', 3),
            ('AGAINST','tegen (hebben|heeft) gestemd', 3), 
            
@@ -119,8 +145,9 @@ STATIC_MARKERS = \
            ('VOTE_PRE', '(hebben|bobben) gestemd', 1),
 
            # IGNOREs prevent text elements mixed with e.g. names from being parsed as such
+           ('TEST' ,'', 0), # No test
            ('IGNORE','(([0-9]){0,2} leden, )?te weten', 2),
-           ('IGNORE','(de lieer|de heer)(en)?',1)
+           ('IGNORE','(?!de geer)(de lieer|de heer)(en)?',1) # make an exception for 'de geer', a politician
           ]
 
 ACTORS = []
@@ -130,6 +157,11 @@ ACTORS_SCORE = []
 ACTOR_MAXLEN = 0
 NAMES = {}
 
+# DEBUG: For debug purposes, we maintain a list of the files that the names in the 'NAMES' mapping
+#        first originated in; this helps track down problematic text segments that are causing erroneous
+#        name recognition.
+NAMES_DEBUG = {}
+
 # =======================================================================================
 # Load metadata
 # =======================================================================================
@@ -137,6 +169,8 @@ NAMES = {}
 def loadNamesMarkers():
     global MARKERS
     global ACTOR_MAXLEN
+    
+    # Personal names
     with open('../data/list-members.xq.xml', 'rb') as xmlfile:
         d = xmltodict.parse(xmlfile, dict_constructor=dict)
         for member in d['result']['members']['member']:
@@ -161,6 +195,21 @@ def loadNamesMarkers():
             ACTORS_INITIALS.append( initials )
             ACTORS_SCORE.append(1.0)
 
+    # Party names
+    with open('../data/list-parties.xq.xml', 'rb') as xmlfile:
+        d = xmltodict.parse(xmlfile, dict_constructor=dict)
+        for party in d['result']['parties']['party']:
+            # Get full name & short name
+            fullname = unidecode(party['name']['#text']).lower()
+            shortname = unidecode(party['@pm:id']).lower()
+            shortname = shortname[shortname.rfind('.')+1:]
+            # Save all variants of name in memory
+            for n in list(set([fullname, shortname])):
+                ACTORS.append( n )
+                ACTORS_INITIALS.append( '' )
+                ACTORS_SCORE.append( 1.0 )
+
+    # Compute max length the parser can expect for a name
     ACTOR_MAXLEN = max([len(ACTORS[x]+ACTORS_INITIALS[x]) for x in xrange(len(ACTORS))])
 
 def loadNamesMapping():
@@ -175,25 +224,81 @@ def saveNamesMapping():
     global NAMES
     with open('../data/names-mapping.json', 'w') as f:
         json.dump(NAMES, f)
+    with open('../data/names-mapping-debug.json', 'w') as f:
+        json.dump(NAMES_DEBUG, f)
+
+# For convenience, both 'test' markers and the full markers are included in MARKERS
+# Each 'XYZ_test' applies only to the 'XYZ' marker directly following it, so:
+#    - We generate an ID for each rule and insert it into the tuple
+#    - We transfer the test markers to MARKERS_TEST and use the newly generated ID as key
+def prepareMarkers():
+    # Add IDs to all test markers
+    latesti = -1
+    i = 0
+    while i < len(MARKERS):
+        if MARKERS[i][0]=='TEST':
+            if MARKERS[i][1]=='':
+                # empty test regex, so set latesti=-1, indicating 'no test'
+                latesti = -1
+                MARKERS.pop(i)
+                i += 1
+            else:
+                # Transfer to MARKERS_TEST
+                MARKERS_TEST[i] = MARKERS[i]
+                latesti = i
+                MARKERS.pop(i)
+        else:
+            # Reference previous test if there is any
+            if latesti >= 0:
+                MARKERS[i] = MARKERS[i] + (latesti, )
+            i += 1
+    # Done!
+    return
+
 
 # =======================================================================================
 # Insert content markers in the text
 # =======================================================================================
 
-def mark(txtarr, markers = STATIC_MARKERS):
+def test(tests, texts, i):
+    for marker in MARKERS_TEST:
+        # Search for simpler 'test' regular expression
+        rex = '('+MARKERS_TEST[marker][1].lower()+'($|[ \t\r\n\f.!,;:])){e<='+str(MARKERS_TEST[marker][2])+'}'
+        s = re.search(rex, texts[i][2])
+        tests[marker].insert( i, (s != None) )
+
+def mark(txtarr):
     texts = copy(txtarr)
+    # Process all 'TEST' markers
+    tests = {}
+    
+    print("Processing test markers", end='\r')
+    for m in MARKERS_TEST: 
+        tests[m] = []
+    for i in xrange(len(texts)):
+        test(tests, texts, i)         
+        
     # Search for all markers
-    for imarker in xrange(len(markers)):
-        marker = markers[imarker]
+    for imarker in xrange(len(MARKERS)):
+        marker = MARKERS[imarker]
         i = 0
         # Print progress
-        print('Marked ' + str(imarker)+'/'+str(len(markers)) + ', marking: ' + marker[1][0:30], end='\r')
+        print('Marked ' + str(imarker)+'/'+str(len(MARKERS)) + ', marking: ' + marker[1][0:30], end='\r')
         # Search through all text fragments
         while i < len(texts):
             # Already marked? If so, skip
             if texts[i][1] != '':
                 i += 1
                 continue
+            # TEST failed? (i.e. a simpler version of the marker does not exist, meaning the 
+            # longer marker definitely doesn't either
+            if marker[0] in tests: 
+                try:
+                    if not tests[marker[0]][i]:
+                        i += 1
+                        continue
+                except:
+                    pass
             # Find markers in text
             matches = []
             try:
@@ -214,6 +319,13 @@ def mark(txtarr, markers = STATIC_MARKERS):
                 texts.insert(i, s3)
                 texts.insert(i, s2)
                 texts.insert(i, s1)
+                # Adjust 'TEST' markers
+                for m in MARKERS_TEST:
+                    tests[m].pop(i)
+                test(tests, texts, i)
+                test(tests, texts, i)
+                test(tests, texts, i)
+
                 # While loop will reprocess s1 with current marker...
             else:
                 # Go to next text fragment
@@ -242,18 +354,21 @@ def getActors(txt, checkOnly=False):
             idx.append(idxp[i])
     # Split string based on these indices
     t = [''.join(x) for x in numpy.split(list(txt), idx)]
-    # Remove empty (or just containing punctuation) categories
-    t = [x for x in t if len(x)>2]
     # Assume the remaining punctuation is the dots of initials, but the dots might have been misinterpreted due to OCR,
     # so convert all punctuation to [ . , - , ' ]
     t = [''.join([(y if y not in string.punctuation else 
                    ("'" if y in ['"',"'"] else 
                     ('-' if y in ['-','_'] else '.'))) 
                      for y in list(x)]) for x in t]
+    # Remove empty (or just containing punctuation) categories
+    # i.e. check the length of the string without any punctuation (the 2 is arbitrary but works)
+    t = [x for x in t if len(''.join([y for y in x if y not in string.punctuation]))>2]
     # Empty list?
     if len(t)==0: return (False if checkOnly else [])
     # Split at 'en' (ENG: 'and') at end
     names = t[:-1] + t[-1].split(' en ')
+    # Remove trailing punctuation
+    names = [x.strip(string.punctuation) for x in names]
     # recognized names
     recnames = []
 
@@ -304,13 +419,17 @@ def getActors(txt, checkOnly=False):
         if len(best) > 0:
             # Insure minimum match at arbitrary (although it seems to work) threshold of 50%:
             r = 1.0 if name in NAMES else difflib.SequenceMatcher(None, name, best[0]).ratio()
-            if r > 0.5:
+            if r > 0.5 or best[0]=='president':
                 if checkOnly:
                     # Don't use the president tag as evidence of a vote
                     if best[0] != 'president': return True
                 else:
                     # Store name in database
                     NAMES[name] = best[0]
+                    
+                    # Store debug information
+                    NAMES_DEBUG[name] = { 'name': name, 'parsed': best[0], 'file': '../html/'+CURFILE }
+                    
                     recnames.append(best[0])
     # Nothing found!
     if checkOnly:
@@ -461,10 +580,20 @@ def toTextArray(d):
 # =======================================================================================
 
 if __name__ == "__main__":
+    # DEBUG: For debug purposes, keep track of the current file (e.g. used for storage of 
+    #        NAMES_DEBUG debug information:
+    global CURFILE
+    
+    print("Preparing static markers")
+    prepareMarkers()
+
     print("Loading document IDs")
     docs_all = db.getids(type='document', size=30000)
     docs_parsed = db.getids(type='document_parsed', size=30000)
     docs = [x for x in docs_all if not x in docs_parsed]
+
+    # DEBUG:
+    #docs = ['nl.proc.sgd.d.183118320000026.xml',]
 
     print("Loading names mapping and names markers")
     # Load politician/party markers
@@ -473,8 +602,10 @@ if __name__ == "__main__":
     
     for idoc in xrange(len(docs)):
         doc = docs[idoc]
+        CURFILE = doc
+
         try:
-            print("Processing doc ("+str(idoc)+"/"+len(docs)+"): " + str(doc))
+            print("Processing doc ("+str(idoc)+"/"+str(len(docs))+"): " + str(doc))
             # Get array of unmarked text
             text = list(toTextArray(db.get(doc)))
             # Mark the text with keywords
